@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/client";
+﻿import { createClient } from "@/lib/supabase/client";
 import { Product } from "@/types/product";
 
-export async function getProducts(categorySlug?: string): Promise<Product[]> {
+export async function getProducts(categorySlugs?: string | string[]): Promise<Product[]> {
   const supabase = createClient();
 
   let query = supabase
@@ -9,15 +9,18 @@ export async function getProducts(categorySlug?: string): Promise<Product[]> {
     .select("*, product_images(*)")
     .order("created_at", { ascending: false });
 
-  if (categorySlug) {
-    const { data: category } = await supabase
+  if (categorySlugs) {
+    const slugs = Array.isArray(categorySlugs) ? categorySlugs : [categorySlugs];
+    const { data: categories } = await supabase
       .from("categories")
       .select("id")
-      .eq("slug", categorySlug)
-      .single();
+      .in("slug", slugs);
 
-    if (category) {
-      query = query.eq("category_id", category.id);
+    if (categories && categories.length > 0) {
+      const ids = categories.map((c) => c.id);
+      query = query.in("category_id", ids);
+    } else {
+      return [];
     }
   }
 
