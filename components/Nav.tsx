@@ -35,8 +35,8 @@ export default function Nav() {
             </button>
           ))}
         </div>
-        <Link
-          href="/rugs"
+       <Link
+          href="/custom-order"
           className="hidden sm:inline text-sm font-mono2 border border-stone-900 px-4 py-2 hover:bg-stone-900 hover:text-stone-50 transition"
         >
           {t.nav.cta}
