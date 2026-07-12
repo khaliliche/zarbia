@@ -1,11 +1,13 @@
-"use client";
+﻿"use client";
 
 import { Scissors, Sparkles, ShoppingBag, Quote, ArrowRight, MapPin, Mail } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { getProducts } from "@/lib/products";
+import { Product } from "@/types/product";
 
 const swatches = [
   "from-orange-700 via-amber-600 to-indigo-900",
@@ -27,7 +29,12 @@ export default function Home() {
   const { t, locale, dir } = useLanguage();
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
+  const [realProducts, setRealProducts] = useState<Product[]>([]);
   const fontClass = locale === "ar" ? "font-arabic" : "font-body";
+
+  useEffect(() => {
+    getProducts().then((data) => setRealProducts(data.slice(0, 4)));
+  }, []);
 
   return (
     <div className={`min-h-screen bg-stone-100 text-stone-900 ${fontClass}`} dir={dir}>
@@ -94,27 +101,33 @@ export default function Home() {
             </Link>
           </div>
         </div>
+
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {t.products.map((p, i) => (
-            <div key={p.name} className="group border border-stone-200 bg-white hover:shadow-lg transition">
-              <div className={`h-44 bg-gradient-to-br ${swatches[i]}`} />
-              <div className="p-5">
-                <div className="text-xs font-mono2 uppercase tracking-wide text-stone-500">{p.kind}</div>
-                <h3 className="font-display font-bold text-lg mt-2">{p.name}</h3>
-                <p className="text-stone-500 text-sm mt-1">{p.note}</p>
-                <div className="flex items-center justify-between mt-4">
-                  <span className="font-mono2 text-orange-800">{p.price}</span>
-                  <Link
-                    href={p.category === "rug" ? "/rugs" : "/djellabas"}
-                    className="text-xs font-mono2 border border-stone-900 px-3 py-1.5 group-hover:bg-stone-900 group-hover:text-stone-50 transition"
-                  >
-                    {t.shop.enquire}
-                  </Link>
+          {realProducts.length === 0 ? (
+            <p className="text-stone-500 text-sm col-span-full">No products yet, add some in Supabase.</p>
+          ) : (
+            realProducts.map((p, i) => (
+              <div key={p.id} className="group border border-stone-200 bg-white hover:shadow-lg transition">
+                {p.product_images && p.product_images.length > 0 ? (
+                  <img src={p.product_images[0].image_url} alt={p.name} className="h-44 w-full object-cover" />
+                ) : (
+                  <div className={`h-44 bg-gradient-to-br ${swatches[i % swatches.length]}`} />
+                )}
+                <div className="p-5">
+                  <h3 className="font-display font-bold text-lg mt-2">{p.name}</h3>
+                  <p className="text-stone-500 text-sm mt-1">{p.description}</p>
+                  <div className="flex items-center justify-between mt-4">
+                    <span className="font-mono2 text-orange-800">{p.price} {p.currency}</span>
+                    <a href="/custom-order" className="text-xs font-mono2 border border-stone-900 px-3 py-1.5 group-hover:bg-stone-900 group-hover:text-stone-50 transition">
+                      {t.shop.enquire}
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
+
         <div className="mt-6 border border-dashed border-stone-300 p-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <Sparkles size={18} className="text-orange-700" />
