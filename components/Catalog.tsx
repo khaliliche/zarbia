@@ -1,10 +1,12 @@
 ﻿"use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Check } from "lucide-react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useCart } from "@/lib/cart/CartContext";
 import { Product } from "@/types/product";
 
 const rugSwatches = [
@@ -24,6 +26,65 @@ const djellabaSwatches = [
   "from-orange-200 via-amber-200 to-stone-300",
   "from-indigo-950 via-indigo-900 to-indigo-700",
 ];
+
+function ProductCard({ p, i, swatches, enquireLabel }: { p: Product; i: number; swatches: string[]; enquireLabel: string }) {
+  const { addItem } = useCart();
+  const [size, setSize] = useState(p.sizes?.[0] || "");
+  const [color, setColor] = useState(p.colors?.[0] || "");
+  const [added, setAdded] = useState(false);
+
+  function handleAdd() {
+    addItem({
+      product_id: p.id,
+      name: p.name,
+      price: p.price,
+      currency: p.currency,
+      size,
+      color,
+      quantity: 1,
+      image_url: p.product_images?.[0]?.image_url,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
+
+  return (
+    <div className="group border border-stone-200 bg-white hover:shadow-lg transition">
+      {p.product_images && p.product_images.length > 0 ? (
+        <img src={p.product_images[0].image_url} alt={p.name} className="h-48 w-full object-cover" />
+      ) : (
+        <div className={`h-48 bg-gradient-to-br ${swatches[i % swatches.length]}`} />
+      )}
+      <div className="p-5">
+        <h3 className="font-display font-bold text-lg mt-2">{p.name}</h3>
+        <p className="text-stone-500 text-sm mt-1">{p.description}</p>
+
+        {p.sizes && p.sizes.length > 0 && (
+          <select value={size} onChange={(e) => setSize(e.target.value)} className="mt-3 w-full border border-stone-300 px-2 py-1.5 text-sm">
+            {p.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        )}
+        {p.colors && p.colors.length > 0 && (
+          <select value={color} onChange={(e) => setColor(e.target.value)} className="mt-2 w-full border border-stone-300 px-2 py-1.5 text-sm">
+            {p.colors.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+
+        <div className="flex items-center justify-between mt-4">
+          <span className="font-mono2 text-orange-800">{p.price} {p.currency}</span>
+          <button
+            onClick={handleAdd}
+            disabled={p.stock === 0}
+            className="text-xs font-mono2 border border-stone-900 px-3 py-1.5 group-hover:bg-stone-900 group-hover:text-stone-50 transition flex items-center gap-1 disabled:opacity-40"
+          >
+            {added ? <Check size={14} /> : <Plus size={14} />}
+            {p.stock === 0 ? "Out of stock" : added ? "Added" : "Add to cart"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Catalog({
   variant,
@@ -65,26 +126,7 @@ export default function Catalog({
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((p, i) => (
-              <div key={p.id} className="group border border-stone-200 bg-white hover:shadow-lg transition">
-                {p.product_images && p.product_images.length > 0 ? (
-                  <img src={p.product_images[0].image_url} alt={p.name} className="h-48 w-full object-cover" />
-                ) : (
-                  <div className={`h-48 bg-gradient-to-br ${swatches[i % swatches.length]}`} />
-                )}
-                <div className="p-5">
-                  {p.sizes && p.sizes.length > 0 && (
-                    <div className="text-xs font-mono2 uppercase tracking-wide text-stone-500">{p.sizes.join(", ")}</div>
-                  )}
-                  <h3 className="font-display font-bold text-lg mt-2">{p.name}</h3>
-                  <p className="text-stone-500 text-sm mt-1">{p.description}</p>
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="font-mono2 text-orange-800">{p.price} {p.currency}</span>
-                    <a href="/custom-order" className="text-xs font-mono2 border border-stone-900 px-3 py-1.5 group-hover:bg-stone-900 group-hover:text-stone-50 transition">
-                      {t.shop.enquire}
-                    </a>
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={p.id} p={p} i={i} swatches={swatches} enquireLabel={t.shop.enquire} />
             ))}
           </div>
         )}
@@ -98,6 +140,10 @@ export default function Catalog({
             {t.shop.customCta}
           </Link>
         </div>
+
+        <p className="mt-4 text-center text-xs text-stone-500 font-mono2">
+          Payment on delivery (cash) or bank transfer, no online payment required.
+        </p>
       </section>
 
       <Footer />

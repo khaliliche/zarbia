@@ -1,12 +1,15 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
+import { ShoppingCart } from "lucide-react";
 import LogoMark from "@/components/LogoMark";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { locales } from "@/lib/i18n/translations";
+import { useCart } from "@/lib/cart/CartContext";
 
 export default function Nav() {
   const { t, locale, setLocale } = useLanguage();
+  const { count } = useCart();
 
   return (
     <nav className="max-w-6xl mx-auto flex items-center justify-between px-6 py-7">
@@ -35,7 +38,15 @@ export default function Nav() {
             </button>
           ))}
         </div>
-       <Link
+        <Link href="/cart" className="relative">
+          <ShoppingCart size={20} className="text-stone-700 hover:text-stone-900 transition" />
+          {count > 0 && (
+            <span className="absolute -top-2 -right-2 bg-orange-700 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+              {count}
+            </span>
+          )}
+        </Link>
+        <Link
           href="/custom-order"
           className="hidden sm:inline text-sm font-mono2 border border-stone-900 px-4 py-2 hover:bg-stone-900 hover:text-stone-50 transition"
         >
