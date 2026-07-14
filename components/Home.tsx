@@ -7,7 +7,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import Fringe from "@/components/Fringe";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { getProducts } from "@/lib/products";
+import  {getProducts }from "@/lib/products";
 import { Product } from "@/types/product";
 
 const swatches = [

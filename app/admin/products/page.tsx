@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { Upload, X, LogOut, ImageOff, Diamond } from "lucide-react";
+import { Upload, X, LogOut, ImageOff, Diamond, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Product } from "@/types/product";
 import LogoMark from "@/components/LogoMark";
@@ -12,6 +12,12 @@ export default function AdminProductsPage() {
   const [passError, setPassError] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [uploading, setUploading] = useState<string | null>(null);
+
+  const emptyProductForm = { name: "", price: "", currency: "MAD" };
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [productForm, setProductForm] = useState(emptyProductForm);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("zarbia-admin-unlocked") === "true") {
@@ -84,6 +90,40 @@ export default function AdminProductsPage() {
     await loadProducts();
   }
 
+  async function addProduct(e: React.FormEvent) {
+    e.preventDefault();
+    if (!productForm.name || !productForm.price) {
+      alert("Name and price are required.");
+      return;
+    }
+    setSavingProduct(true);
+    const supabase = createClient();
+    const { error } = await supabase.from("products").insert({
+      name: productForm.name,
+      price: Number(productForm.price),
+      currency: productForm.currency,
+    });
+    setSavingProduct(false);
+    if (error) {
+      alert("Could not add product: " + error.message);
+      return;
+    }
+    setProductForm(emptyProductForm);
+    setShowAddProduct(false);
+    loadProducts();
+  }
+
+  async function deleteProduct(id: string) {
+    if (!confirm("Delete this product and all its photos? This can't be undone.")) return;
+    setDeletingProductId(id);
+    const supabase = createClient();
+    await supabase.from("product_images").delete().eq("product_id", id);
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) alert("Delete failed: " + error.message);
+    await loadProducts();
+    setDeletingProductId(null);
+  }
+
   const totalImages = products.reduce((sum, p) => sum + (p.product_images?.length || 0), 0);
 
   if (!unlocked) {
@@ -150,6 +190,13 @@ export default function AdminProductsPage() {
               </div>
             </div>
             <button
+              onClick={() => setShowAddProduct((s) => !s)}
+              className="flex items-center gap-2 text-xs font-mono2 border border-amber-500 text-amber-500 px-3 py-2 hover:bg-amber-500 hover:text-stone-900 transition"
+            >
+              {showAddProduct ? <X size={14} /> : <Plus size={14} />}
+              {showAddProduct ? "Cancel" : "Add product"}
+            </button>
+            <button
               onClick={signOut}
               className="flex items-center gap-2 text-xs font-mono2 border border-stone-700 px-3 py-2 text-stone-300 hover:border-red-500 hover:text-red-400 transition"
             >
@@ -162,6 +209,43 @@ export default function AdminProductsPage() {
 
       {/* Product ledger */}
       <div className="max-w-5xl mx-auto px-6 md:px-8 py-10">
+        {showAddProduct && (
+          <form
+            onSubmit={addProduct}
+            className="bg-white border border-stone-200 p-5 mb-5 grid sm:grid-cols-3 gap-3"
+          >
+            <input
+              className="border border-stone-300 px-3 py-2 text-sm sm:col-span-2"
+              placeholder="Product name *"
+              value={productForm.name}
+              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+            />
+            <input
+              type="number"
+              className="border border-stone-300 px-3 py-2 text-sm"
+              placeholder="Price *"
+              value={productForm.price}
+              onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+            />
+            <select
+              className="border border-stone-300 px-3 py-2 text-sm"
+              value={productForm.currency}
+              onChange={(e) => setProductForm({ ...productForm, currency: e.target.value })}
+            >
+              <option value="MAD">MAD</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+            <button
+              type="submit"
+              disabled={savingProduct}
+              className="sm:col-span-3 bg-orange-700 text-white text-sm py-2 hover:bg-orange-600 transition disabled:opacity-50"
+            >
+              {savingProduct ? "Saving..." : "Add product"}
+            </button>
+          </form>
+        )}
+
         {products.length === 0 ? (
           <div className="border border-dashed border-stone-300 bg-white p-10 text-center text-stone-500">
             <Diamond size={20} className="mx-auto mb-3 text-orange-700" />
@@ -176,9 +260,19 @@ export default function AdminProductsPage() {
                     <h2 className="font-display font-bold text-lg">{p.name}</h2>
                     <p className="text-sm font-mono2 text-orange-800">{p.price} {p.currency}</p>
                   </div>
-                  <span className="text-xs font-mono2 uppercase tracking-wide text-stone-400">
-                    {p.product_images?.length || 0} photo{p.product_images?.length === 1 ? "" : "s"}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono2 uppercase tracking-wide text-stone-400">
+                      {p.product_images?.length || 0} photo{p.product_images?.length === 1 ? "" : "s"}
+                    </span>
+                    <button
+                      onClick={() => deleteProduct(p.id)}
+                      disabled={deletingProductId === p.id}
+                      aria-label="Delete product"
+                      className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="p-5 md:p-6">
