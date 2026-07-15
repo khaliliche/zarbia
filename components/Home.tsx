@@ -60,8 +60,7 @@ export default function Home() {
             </a>
           </div>
           <div className="flex gap-8 mt-12 text-sm">
-            <div><div className="font-display font-bold text-2xl">18</div><div className="text-stone-500">{t.hero.stat1}</div></div>
-            <div><div className="font-display font-bold text-2xl">400+</div><div className="text-stone-500">{t.hero.stat2}</div></div>
+            <div><div className="font-display font-bold text-2xl">16</div><div className="text-stone-500">{t.hero.stat1}</div></div>
             <div><div className="font-display font-bold text-2xl">100%</div><div className="text-stone-500">{t.hero.stat3}</div></div>
           </div>
         </div>
