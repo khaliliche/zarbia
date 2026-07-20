@@ -41,10 +41,27 @@ export default function AdminOrdersPage() {
   }
 
   async function updateStatus(id: string, status: string) {
-    const supabase = createClient();
-    await supabase.from("custom_orders").update({ status }).eq("id", id);
-    loadOrders();
+  const supabase = createClient();
+  await supabase.from("custom_orders").update({ status }).eq("id", id);
+
+  if (status === "confirmed") {
+    const order = orders.find((o) => o.id === id);
+    if (order) {
+      fetch("/api/notify-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: order.id,
+          name: order.name,
+          email: order.email,
+          whatsapp: order.whatsapp,
+        }),
+      }).catch((err) => console.error("Notify failed:", err));
+    }
   }
+
+  loadOrders();
+}
 
   async function deleteOrder(id: string) {
     if (!confirm("Delete this order permanently?")) return;
