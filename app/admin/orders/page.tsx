@@ -44,7 +44,7 @@ export default function AdminOrdersPage() {
   const supabase = createClient();
   await supabase.from("custom_orders").update({ status }).eq("id", id);
 
-  if (status === "confirmed") {
+  if (["confirmed", "quoted", "closed"].includes(status)) {
     const order = orders.find((o) => o.id === id);
     if (order) {
       fetch("/api/notify-order", {
@@ -55,6 +55,7 @@ export default function AdminOrdersPage() {
           name: order.name,
           email: order.email,
           whatsapp: order.whatsapp,
+          status
         }),
       }).catch((err) => console.error("Notify failed:", err));
     }
